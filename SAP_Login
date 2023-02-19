@@ -1,0 +1,76 @@
+import json
+import tkinter
+from types import SimpleNamespace
+import win32com.client
+import sys
+import subprocess 
+import time 
+from tkinter import*
+from tkinter import messagebox
+
+class SapGui():
+    def __init__(self, name):
+        print(f"using {name}")
+        self.path = r"C:\Program Files (x86)\SAP\FrontEnd\SAPgui\saplogon.exe"
+        subprocess.Popen(self.path)
+        time.sleep(5)
+
+        self.SapGuiAuto = win32com.client.GetObject("SAPGUI")
+        if not type(self.SapGuiAuto) == win32com.client.CDispatch:
+            return
+
+        application = self.SapGuiAuto.GetScriptingEngine
+        self.connection = application.OpenConnection(name, True)
+        time.sleep(3)
+        self.session = self.connection.Children(0)
+        self.session.findById("wnd[0]").maximize
+
+    def sapLogin(self, mandt, uname, pswd):
+        try:
+            print("Login input")
+            self.session.findById("wnd[0]/usr/txtRSYST-MANDT").text = mandt
+            self.session.findById("wnd[0]/usr/txtRSYST-BNAME").text = uname
+            self.session.findById("wnd[0]/usr/pwdRSYST-BCODE").text = pswd
+            self.session.findById("wnd[0]/usr/txtRSYST-LANGU").text = "EN"
+            self.session.findById("wnd[0]").sendVKey(0)
+        except:
+            print("Error")
+
+
+if __name__ == '__main__':
+    window = Tk()
+    window.title("SAP GUI Login")
+    window.configure(bg="green")
+    window.geometry(f"{int(window.winfo_screenwidth()/2)}x{int(window.winfo_screenheight()/2)}")
+    # login_profiles = {
+    #     "ABAP": ["010", "s103164", "test"],
+    #     "ssd": ["010", "s103164", "test"],
+    #     "functional": ["010", "s103164", "test"],
+    #     "land": ["010", "s103164", "test"]
+    # }
+    profile_data= json.load(open("profile.json"), object_hook=lambda d: SimpleNamespace(**d))
+    # print(profile_data)
+    for profile in profile_data.profiles:
+        btn = Button(window, text=profile.name, command=lambda: SapGui(profile.name).sapLogin(mandt=profile.mandt,
+                                                                                              uname=profile.uname,
+                                                                                              pswd=profile.pswd))
+
+        btn.pack(pady=2)
+    #for label
+    window.update_idletasks()
+    text = Label(text="Just do it", fg="red", bg="yellow", width=window.winfo_width())
+    text.pack(side=tkinter.BOTTOM)
+    window.update_idletasks()
+    print(text.winfo_width())
+
+    # text.place(x=int(window.winfo_width() / 2), y=140)
+
+
+
+
+    # for profile_name, creds in login_profiles.items():
+    #     btn = Button(window, text=profile_name, command=lambda: SapGui(profile_name).sapLogin(mandt=creds[0],
+    #                                                                                           uname=creds[1],
+    #                                                                                           pswd=creds[2]))
+    #     btn.pack()
+    mainloop()
